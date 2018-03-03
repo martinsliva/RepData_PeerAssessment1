@@ -11,9 +11,11 @@ output:
 
 ## Loading and preprocessing the data
 
-```{r}
-unzip(zipfile = "activity.zip") 
+```{r loading_file}
+
+if(!file.exists('activity.csv')){ unzip('activity.zip')}
 activity<-read.csv("activity.csv") 
+
 
 ```
 
@@ -25,6 +27,7 @@ Preprocessing of data is not applied.
 
 
 ```{r histogram}
+
 steps_sum<-with(activity, tapply(steps, date, FUN = sum, na.rm=T)) ### sum steps made every day
 
 hist(steps_sum, breaks = 20, main="Total number of steps taken per day", xlab = "Number of steps", ylab = "Number of days" )
@@ -49,7 +52,7 @@ The mean of steps per day is `r steps_mean` and median is `r steps_median`.
 
 
 
-```{r}
+```{r   maximal_steps}
 
 steps_interval<-with(activity, aggregate(steps, list(interval),FUN=mean, na.rm=T )) ### 
 names(steps_interval)<-c("Interval","Steps")
@@ -61,12 +64,13 @@ steps_interval_max<-steps_interval$Interval[which.max(steps_interval$Steps)]
 
 
 ```
-Maximal steps are in interval `r steps_interval_max`.
+
+The 5-minute interval with maximal average steps is `r steps_interval_max`.
 
 
 ## Imputing missing values
 
-
+The strategy for inputing missing values: inputing median of 5-minute time interval. 
 
 
 ```{r number_na}
@@ -78,7 +82,7 @@ number_na<-sum(is.na(activity))
 Number of missing values is `r number_na`.
 
 
-```{r}
+```{r inputing_missing_values}
 
 steps_interval_median<-with(activity, tapply(steps, interval,FUN=median, na.rm=T ))     ### calculation of median for all interval - NA excluded
 steps_na<-which(is.na(activity$steps))                                                  ### finding which rows have NA in steps column
@@ -88,7 +92,9 @@ for(i in steps_na) {activity_new$steps[i]<-steps_interval_median[[1+activity$int
 
 ```
 
-```{r}
+```{r histogram_after_inputing_values}
+
+
 steps_sum_new<-with(activity_new, tapply(steps, date, FUN = sum, na.rm=T))          ### Calculation sums of steps per date  
 
 hist(steps_sum_new, breaks = 20, main="Total number of steps taken per day after missing value inputed ", xlab = "Number of steps", ylab = "Number of days" )
@@ -102,6 +108,8 @@ hist(steps_sum_new, breaks = 20, main="Total number of steps taken per day after
 
  steps_mean_new<-mean(steps_sum_new)
 
+ mean_difference<-steps_mean_new-steps_mean
+
 ```
 
 
@@ -110,8 +118,11 @@ hist(steps_sum_new, breaks = 20, main="Total number of steps taken per day after
  steps_median_new<-median(steps_sum_new)
 
 ```
+
+
 After filling missing value by median of time interval new mean is `r steps_mean_new` and new median is `r steps_median_new`.
 
+The median stayed the same as input of median do not have impact on it. Average changed by `r mean_difference`.
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
@@ -132,20 +143,10 @@ names(steps_interval_new)[1:3]<-c("Time_interval", "Weekend", "Average_steps")
 
 ```
 
-```{r final_chart_basic}
-
-par(mfrow=c(2,1))
-plot(steps_interval_new[steps_interval_new[,2],1], steps_interval_new[steps_interval_new[,2],3], type = "l", main="Average number of steps taken during weekends", xlab = "Time (hhmm)", ylab = "Number of steps")
-plot(steps_interval_new[!steps_interval_new[,2],1], steps_interval_new[!steps_interval_new[,2],3], type = "l", main="Average number of steps taken during weekdays", xlab = "Time (hhmm)", ylab = "Number of steps")
 
 
 
-```
-
-
-
-
-```{r final_chart_better }
+```{r final_chart }
 library(ggplot2)
 
 final_chart <- ggplot(steps_interval_new, aes(x=Time_interval, y=Average_steps))+geom_line(colour="blue")+facet_grid(day_type~.)+ggtitle("Average steps taken during weekdays and weekends")
